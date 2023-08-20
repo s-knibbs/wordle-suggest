@@ -42,7 +42,7 @@ class WordleClue:
 
     def validate(self, words: set[str]) -> str | None:
         if self.guess not in words:
-            return f"'{self.guess}' is not a 5-letter word"
+            return f"'{self.guess}' is not a word"
         if len(self.present) != len(ALPHABET & set(self.present.keys())):
             p = ''.join(self.present.keys())
             return f"Invalid characters in letters present '{p}'"
@@ -59,8 +59,8 @@ class WordsIndexes:
     match_lookup: tuple[dict[str, set[str]], ...]
 
     @classmethod
-    def from_words(cls, words: set[str]) -> WordsIndexes:
-        match_lookup = (defaultdict(set), defaultdict(set), defaultdict(set), defaultdict(set), defaultdict(set))
+    def from_words(cls, words: set[str], word_length: int = 5) -> WordsIndexes:
+        match_lookup = tuple(defaultdict(set) for _ in range(word_length))
         letter_lookup = defaultdict(set)
         for word in words:
             for idx, letter in enumerate(word):
@@ -97,12 +97,12 @@ class WordsIndexes:
         return matching_words - non_matching_words
 
 
-def get_word_list(word_list_file: str) -> set[str]:
+def get_word_list(word_list_file: str, word_length: int = 5) -> set[str]:
     words = set()
     with open(word_list_file) as words_file:
         for line in words_file:
             word = line.strip()
-            if len(word) == 5 and "'" not in word:
+            if len(word) == word_length and "'" not in word:
                 words.add(word.lower())
     return words
 
@@ -117,9 +117,10 @@ CTRL+C to exit.
 def main():
     parser = ArgumentParser(epilog=REPL_USAGE)
     parser.add_argument("-w", "--word-list", default=DEFAULT_WORD_LIST, type=str, help="Path to word list")
+    parser.add_argument("-l", "--word-length", default=5, type=int, help="Length of words")
     args = parser.parse_args()
-    words = get_word_list(args.word_list)
-    index = WordsIndexes.from_words(words)
+    words = get_word_list(args.word_list, args.word_length)
+    index = WordsIndexes.from_words(words, args.word_length)
     matches = set(words)
     while True:
         try:
